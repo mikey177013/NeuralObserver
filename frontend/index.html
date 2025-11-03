@@ -6,22 +6,38 @@
     <style>
         body { margin: 0; padding: 0; overflow: hidden; }
         #loading { 
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            font-family: Arial; text-align: center; z-index: 1000; background: white; 
-            padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-family: Arial; 
+            text-align: center; 
+            z-index: 1000;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
         }
         #permissionMessage { 
             display: none; 
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: rgba(0,0,0,0.9); color: white; padding: 30px; border-radius: 10px; 
-            z-index: 1000; text-align: center;
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: rgba(0,0,0,0.9); 
+            color: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            z-index: 1000;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div id="loading">
         <h2>🔄 Loading Hand Tracking...</h2>
-        <div id="status">Starting application...</div>
+        <p id="status">Starting application...</p>
+        <div id="progress"></div>
     </div>
     
     <div id="permissionMessage">
@@ -32,50 +48,13 @@
         </button>
     </div>
 
-    <!-- Load scripts sequentially with error handling -->
-    <script>
-        function loadScript(src, callback) {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = callback;
-            script.onerror = function() {
-                console.error('Failed to load script:', src);
-                document.getElementById('status').innerHTML = '❌ Failed to load: ' + src;
-            };
-            document.head.appendChild(script);
-        }
-
-        function startApplication() {
-            console.log('All libraries loaded, starting application...');
-            document.getElementById('status').textContent = 'Starting hand tracking...';
-            
-            // Load main script
-            const mainScript = document.createElement('script');
-            mainScript.src = 'script.js';
-            document.body.appendChild(mainScript);
-        }
-
-        // Load scripts in correct order
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js', function() {
-            console.log('p5.js loaded');
-            document.getElementById('status').textContent = 'p5.js loaded...';
-            
-            loadScript('https://p5play.org/v3/planck.min.js', function() {
-                console.log('planck.js loaded');
-                document.getElementById('status').textContent = 'Physics engine loaded...';
-                
-                loadScript('https://p5play.org/v3/p5play.js', function() {
-                    console.log('p5play.js loaded');
-                    document.getElementById('status').textContent = 'p5play loaded...';
-                    
-                    loadScript('https://unpkg.com/ml5@1/dist/ml5.js', function() {
-                        console.log('ml5.js loaded');
-                        document.getElementById('status').textContent = 'AI model loading...';
-                        startApplication();
-                    });
-                });
-            });
-        });
-    </script>
+    <!-- Load libraries in correct order -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+    <script src="https://p5play.org/v3/planck.min.js"></script>
+    <script src="https://p5play.org/v3/p5play.js"></script>
+    <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
+    
+    <!-- Load main script -->
+    <script src="script.js"></script>
 </body>
 </html>
