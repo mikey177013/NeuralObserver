@@ -2,18 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <script src="https://openprocessing.org/openprocessing_sketch.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.min.js"></script>
-    <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
+    <title>Hand Tracking Puppet</title>
+    <!-- Load p5 first -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+    <!-- Then p5play -->
     <script src="https://p5play.org/v3/planck.min.js"></script>
     <script src="https://p5play.org/v3/p5play.js"></script>
-    <script src="script.js"></script>
+    <!-- Then ml5 -->
+    <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
+    <div id="loading" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: Arial; text-align: center;">
+        <h2>Loading Hand Tracking...</h2>
+        <p id="status">Initializing</p>
+    </div>
     <div id="permissionMessage" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 1000;">
         <h3>Camera Access Required</h3>
         <p>Please allow camera access to use this application.</p>
     </div>
+    
+    <!-- Load your script LAST -->
+    <script src="script.js"></script>
 </body>
 </html>
