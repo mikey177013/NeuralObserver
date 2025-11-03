@@ -3,77 +3,57 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>p5play Demo</title>
+  <title>p5play Test</title>
 
-  <!-- ✅ Correct load order -->
-  <!-- 1️⃣ Core p5.js -->
+  <!-- ✅ Proper load order -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/planck-js@0.3.0/dist/planck.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/quinton-ashley/p5play@3.23.1/lib/p5play.js"></script>
 
-  <!-- 2️⃣ Physics engine for p5play -->
-  <script src="https://cdn.jsdelivr.net/gh/quinton-ashley/p5play@3.20/planck.min.js"></script>
+  <!-- optional ml5 -->
+  <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
 
-  <!-- 3️⃣ p5play library (stable mirror) -->
-  <script src="https://cdn.jsdelivr.net/gh/quinton-ashley/p5play@3.20/p5play.js"></script>
-
-  <!-- 4️⃣ ml5.js (optional but loaded after p5play) -->
-  <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
-
-  <!-- ✅ Style -->
   <style>
-    body {
+    html, body {
       margin: 0;
       padding: 0;
-      background: #000;
-      color: #0f0;
-      font-family: monospace;
       overflow: hidden;
+      background: black;
+      color: lime;
+      font-family: monospace;
     }
-
-    #error-message {
-      color: #ff4444;
+    #error {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      color: red;
       font-size: 1.2rem;
       text-align: center;
     }
   </style>
 </head>
+
 <body>
-  <div id="error-message"></div>
+  <div id="error"></div>
 
-  <!-- ✅ Main script -->
   <script>
-    // Utility to show user-friendly error
-    function showError(message) {
-      document.getElementById("error-message").innerText = message;
-      console.error(message);
+    // small helper
+    const errBox = document.getElementById("error");
+    function fail(msg) {
+      errBox.textContent = msg;
+      console.error(msg);
     }
 
-    // Confirm all libraries are loaded
-    function checkLibraries() {
-      if (typeof p5 === "undefined") {
-        showError("p5.js failed to load. Please refresh the page.");
-        return false;
-      }
-      if (typeof planck === "undefined") {
-        showError("Planck.js (physics) failed to load. Please refresh the page.");
-        return false;
-      }
-      if (typeof Group === "undefined") {
-        showError("p5play library failed to load. Please refresh the page.");
-        return false;
-      }
-      console.log("✅ All libraries loaded successfully!");
-      return true;
-    }
-
-    // Wait for everything to load
     window.addEventListener("load", () => {
-      if (!checkLibraries()) return;
+      // Check library availability
+      if (typeof p5 === "undefined") return fail("p5.js failed to load.");
+      if (typeof planck === "undefined") return fail("Planck.js failed to load.");
+      if (typeof Group === "undefined" || typeof Sprite === "undefined")
+        return fail("p5play failed to load. Try reloading or check network/CDN.");
 
-      // 🔥 Start your p5 sketch
+      console.log("✅ All libraries loaded successfully!");
+
       new p5((sketch) => {
         let ball;
 
@@ -90,8 +70,8 @@
           if (ball.x < 0 || ball.x > sketch.width) ball.vel.x *= -1;
           if (ball.y < 0 || ball.y > sketch.height) ball.vel.y *= -1;
           sketch.textAlign(sketch.CENTER);
-          sketch.textSize(20);
-          sketch.text("p5play running smoothly ⚡", sketch.width / 2, 40);
+          sketch.textSize(24);
+          sketch.text("p5play is alive 🌀", sketch.width / 2, 40);
         };
       });
     });
