@@ -247,7 +247,7 @@ function initializeSketch() {
             head.diameter = pScale*80;  
             head.x = xMax/2;  
             head.y = yMax/2 - pScale*70;  
-            head.img = '😀';  
+            head.img = '🤕';  
             head.textSize = pScale*40;  
             new p.GlueJoint(neck, head);  
 
