@@ -1,81 +1,37 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Camera Access Demo</title>
 
-  <!-- Load p5 and ml5 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
-  <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+  <script src="https://openprocessing.org/openprocessing_sketch.js"></script>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background-color: black;
-      color: lime;
-      font-family: monospace;
-      text-align: center;
-    }
-    #error {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: red;
-      font-size: 1.2rem;
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.min.js"></script>
+
+  <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
+
+  <script src="https://p5play.org/v3/planck.min.js"></script>
+
+  <script src="https://p5play.org/v3/p5play.js"></script>
+
+  <script src="script.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="style.css">
+
 </head>
 
 <body>
-  <div id="error"></div>
 
-  <script>
-    let video;
-    let errorDiv = document.getElementById("error");
+  <div id="permissionMessage" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 1000;">
 
-    function setup() {
-      createCanvas(windowWidth, windowHeight);
+    <h3>Camera Access Required</h3>
 
-      // Ask for camera permission
-      video = createCapture(VIDEO, (stream) => {
-        console.log("✅ Camera permission granted!");
-      }, (err) => {
-        console.error("❌ Camera permission denied:", err);
-        errorDiv.textContent = "Camera permission denied. Please enable it.";
-      });
+    <p>Please allow camera access to use this application.</p>
 
-      video.size(width, height);
-      video.hide();
-      textAlign(CENTER);
-    }
+  </div>
 
-    function draw() {
-      background(0);
-      if (video) {
-        // Mirror effect
-        push();
-        translate(width, 0);
-        scale(-1, 1);
-        image(video, 0, 0, width, height);
-        pop();
-
-        fill(0, 255, 0);
-        textSize(24);
-        text("🎥 Camera Active - Smile!", width / 2, 40);
-      } else {
-        fill(255, 0, 0);
-        textSize(20);
-        text("Waiting for camera permission...", width / 2, height / 2);
-      }
-    }
-
-    function windowResized() {
-      resizeCanvas(windowWidth, windowHeight);
-    }
-  </script>
 </body>
+
 </html>
