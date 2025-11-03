@@ -3,26 +3,79 @@
 <head>
     <meta charset="utf-8" />
     <title>Hand Tracking Puppet</title>
-    <!-- Load p5 first -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
-    <!-- Then p5play -->
-    <script src="https://p5play.org/v3/planck.min.js"></script>
-    <script src="https://p5play.org/v3/p5play.js"></script>
-    <!-- Then ml5 -->
-    <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; }
+        #loading { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            font-family: Arial; text-align: center; z-index: 1000; background: white; 
+            padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        #permissionMessage { 
+            display: none; 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: rgba(0,0,0,0.9); color: white; padding: 30px; border-radius: 10px; 
+            z-index: 1000; text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <div id="loading" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: Arial; text-align: center; z-index: 1000;">
-        <h2>Loading Hand Tracking...</h2>
-        <p id="status">Initializing libraries...</p>
+    <div id="loading">
+        <h2>🔄 Loading Hand Tracking...</h2>
+        <div id="status">Starting application...</div>
     </div>
-    <div id="permissionMessage" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 1000;">
-        <h3>Camera Access Required</h3>
+    
+    <div id="permissionMessage">
+        <h3>📷 Camera Access Required</h3>
         <p>Please allow camera access to use this application.</p>
+        <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Try Again
+        </button>
     </div>
 
-    <!-- Load your script LAST -->
-    <script src="script.js"></script>
+    <!-- Load scripts sequentially with error handling -->
+    <script>
+        function loadScript(src, callback) {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = callback;
+            script.onerror = function() {
+                console.error('Failed to load script:', src);
+                document.getElementById('status').innerHTML = '❌ Failed to load: ' + src;
+            };
+            document.head.appendChild(script);
+        }
+
+        function startApplication() {
+            console.log('All libraries loaded, starting application...');
+            document.getElementById('status').textContent = 'Starting hand tracking...';
+            
+            // Load main script
+            const mainScript = document.createElement('script');
+            mainScript.src = 'script.js';
+            document.body.appendChild(mainScript);
+        }
+
+        // Load scripts in correct order
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js', function() {
+            console.log('p5.js loaded');
+            document.getElementById('status').textContent = 'p5.js loaded...';
+            
+            loadScript('https://p5play.org/v3/planck.min.js', function() {
+                console.log('planck.js loaded');
+                document.getElementById('status').textContent = 'Physics engine loaded...';
+                
+                loadScript('https://p5play.org/v3/p5play.js', function() {
+                    console.log('p5play.js loaded');
+                    document.getElementById('status').textContent = 'p5play loaded...';
+                    
+                    loadScript('https://unpkg.com/ml5@1/dist/ml5.js', function() {
+                        console.log('ml5.js loaded');
+                        document.getElementById('status').textContent = 'AI model loading...';
+                        startApplication();
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 </html>
