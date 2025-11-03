@@ -1,80 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>p5play Test</title>
-
-  <!-- ✅ Proper load order -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+  <meta charset="utf-8">
+  <title>Planck Physics Demo</title>
   <script src="https://cdn.jsdelivr.net/npm/planck-js@0.3.0/dist/planck.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/quinton-ashley/p5play@3.23.1/lib/p5play.js"></script>
-
-  <!-- optional ml5 -->
-  <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
-
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: black;
-      color: lime;
-      font-family: monospace;
-    }
-    #error {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: red;
-      font-size: 1.2rem;
-      text-align: center;
-    }
-  </style>
 </head>
-
-<body>
-  <div id="error"></div>
+<body style="background:black;color:lime;font-family:monospace;">
+  <pre id="output"></pre>
 
   <script>
-    // small helper
-    const errBox = document.getElementById("error");
-    function fail(msg) {
-      errBox.textContent = msg;
-      console.error(msg);
+    const pl = planck, Vec2 = pl.Vec2;
+
+    const world = new pl.World(Vec2(0, -10));
+
+    const ground = world.createBody();
+    ground.createFixture(pl.Edge(Vec2(-20, 0), Vec2(20, 0)));
+
+    const ball = world.createDynamicBody(Vec2(0, 10));
+    ball.createFixture(pl.Circle(1), { density: 1, friction: 0.3, restitution: 0.8 });
+
+    const output = document.getElementById("output");
+
+    function update() {
+      world.step(1/60);
+      const pos = ball.getPosition();
+      const vel = ball.getLinearVelocity();
+      output.textContent = `Ball Y: ${pos.y.toFixed(2)}\nVel Y: ${vel.y.toFixed(2)}`;
+      requestAnimationFrame(update);
     }
 
-    window.addEventListener("load", () => {
-      // Check library availability
-      if (typeof p5 === "undefined") return fail("p5.js failed to load.");
-      if (typeof planck === "undefined") return fail("Planck.js failed to load.");
-      if (typeof Group === "undefined" || typeof Sprite === "undefined")
-        return fail("p5play failed to load. Try reloading or check network/CDN.");
-
-      console.log("✅ All libraries loaded successfully!");
-
-      new p5((sketch) => {
-        let ball;
-
-        sketch.setup = function () {
-          sketch.createCanvas(window.innerWidth, window.innerHeight);
-          ball = new Sprite(sketch.width / 2, sketch.height / 2, 50);
-          ball.color = "lime";
-          ball.vel.x = 3;
-          ball.vel.y = 2;
-        };
-
-        sketch.draw = function () {
-          sketch.background(0);
-          if (ball.x < 0 || ball.x > sketch.width) ball.vel.x *= -1;
-          if (ball.y < 0 || ball.y > sketch.height) ball.vel.y *= -1;
-          sketch.textAlign(sketch.CENTER);
-          sketch.textSize(24);
-          sketch.text("p5play is alive 🌀", sketch.width / 2, 40);
-        };
-      });
-    });
+    update();
   </script>
 </body>
 </html>
