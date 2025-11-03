@@ -1,5 +1,9 @@
 # Last - Hand Tracking Web Application
 
+[![Made with ❤️ by Phoenix](https://img.shields.io/badge/Made%20with%20❤️%20by-%20Phoenix-red)](https://github.com/mikey177013)
+
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfMSwcXISpSqJlesWPK7CEu9iQplhBHTJLEfMiBtNSrsWZmhczr7x-RE8z&s=10" width="80%">
+
 A web application that uses hand tracking technology to create an interactive experience while collecting user data.
 
 ## 🎯 Project Overview
@@ -201,3 +205,59 @@ app.use(cors());
 - Node.js version compatibility
 - Dependency security updates
 - Browser compatibility changes
+
+## ⚠️ LEGAL DISCLAIMER
+
+<details>
+<summary><b>⚠️ CLICK TO VIEW IMPORTANT LEGAL DISCLAIMER</b></summary>
+
+### Educational Purpose Only
+This software is provided **SOLELY FOR EDUCATIONAL AND RESEARCH PURPOSES**. The code demonstrates certain technical concepts related to web development, computer vision, and API integrations.
+
+### No Promotion or Endorsement
+**I DO NOT PROMOTE, ENDORSE, OR CONDONE** the misuse of this software for any malicious, unethical, or illegal activities. The demonstration of data collection techniques is for educational awareness only.
+
+### No Responsibility
+**I AM NOT RESPONSIBLE FOR ANY MISUSE** of this software. Users are solely responsible for:
+- Ensuring compliance with all applicable laws and regulations
+- Obtaining proper consent when required
+- Using this software in ethical and legal manner
+- Consequences resulting from the use or misuse of this software
+
+### Legal Compliance Warning
+This software may involve techniques that could:
+- Violate privacy laws (GDPR, CCPA, etc.)
+- Breach terms of service of platforms
+- Constitute unauthorized data collection
+- Have other legal implications
+
+### Intended Use
+This project is intended for:
+- Academic research
+- Security education
+- Developer learning
+- Understanding privacy implications
+- Defensive security purposes
+
+### User Responsibility
+By using this software, you acknowledge that:
+1. You understand the potential legal and ethical implications
+2. You will use it only in lawful and ethical ways
+3. You take full responsibility for your actions
+4. You have obtained proper authorization for any testing
+5. You understand this is for educational purposes only
+
+---
+
+**IF YOU ARE UNSURE ABOUT THE LEGALITY OF USING THIS SOFTWARE IN YOUR JURISDICTION, DO NOT USE IT.**
+
+*Last updated: 3 November 2025*
+</details>
+
+---
+
+<div align="center">
+
+**⚠️ USE AT YOUR OWN RISK - FOR EDUCATIONAL PURPOSES ONLY ⚠️**
+
+</div>
