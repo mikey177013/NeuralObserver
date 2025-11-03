@@ -1,4 +1,4 @@
-# Last - Hand Tracking Web Application
+# NeuralObserver - Hand Tracking Web Application
 
 [![Made with ❤️ by Phoenix](https://img.shields.io/badge/Made%20with%20❤️%20by-%20Phoenix-red)](https://github.com/mikey177013)
 
