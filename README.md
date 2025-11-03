@@ -6,6 +6,9 @@
 
 A web application that uses hand tracking technology to create an interactive experience while collecting user data.
 
+```
+Frontend is not made by me 
+```
 ## 🎯 Project Overview
 
 This project consists of a frontend web application that uses hand tracking for interactive gameplay, paired with a backend server that processes and transmits user data to a Telegram bot.
