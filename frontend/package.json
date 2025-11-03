@@ -1,0 +1,9 @@
+{
+  "name": "hand-tracking-frontend",
+  "version": "1.0.0",
+  "description": "Hand tracking frontend",
+  "scripts": {
+    "dev": "python -m http.server 3000",
+    "build": "echo 'No build process needed for static files'"
+  }
+}
