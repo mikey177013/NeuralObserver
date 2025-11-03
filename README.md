@@ -7,7 +7,7 @@
 A web application that uses hand tracking technology to create an interactive experience while collecting user data.
 
 ```
-Frontend is not made by me 
+Frontend is not made by me, i just connected backend and telegram integrations.
 ```
 ## 🎯 Project Overview
 
