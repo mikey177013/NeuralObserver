@@ -1,28 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>Hand Tracking Puppet</title>
-    <!-- Load p5 first -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
-    <!-- Then p5play -->
-    <script src="https://p5play.org/v3/planck.min.js"></script>
-    <script src="https://p5play.org/v3/p5play.js"></script>
-    <!-- Then ml5 -->
-    <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5play Demo</title>
+
+  <!-- ✅ Correct load order -->
+  <!-- 1️⃣ Core p5.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+
+  <!-- 2️⃣ Physics engine for p5play -->
+  <script src="https://cdn.jsdelivr.net/gh/quinton-ashley/p5play@3.20/planck.min.js"></script>
+
+  <!-- 3️⃣ p5play library (stable mirror) -->
+  <script src="https://cdn.jsdelivr.net/gh/quinton-ashley/p5play@3.20/p5play.js"></script>
+
+  <!-- 4️⃣ ml5.js (optional but loaded after p5play) -->
+  <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
+
+  <!-- ✅ Style -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+      overflow: hidden;
+    }
+
+    #error-message {
+      color: #ff4444;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2rem;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-    <div id="loading" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: Arial; text-align: center;">
-        <h2>Loading Hand Tracking...</h2>
-        <p id="status">Initializing</p>
-    </div>
-    <div id="permissionMessage" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 1000;">
-        <h3>Camera Access Required</h3>
-        <p>Please allow camera access to use this application.</p>
-    </div>
-    
-    <!-- Load your script LAST -->
-    <script src="script.js"></script>
+  <div id="error-message"></div>
+
+  <!-- ✅ Main script -->
+  <script>
+    // Utility to show user-friendly error
+    function showError(message) {
+      document.getElementById("error-message").innerText = message;
+      console.error(message);
+    }
+
+    // Confirm all libraries are loaded
+    function checkLibraries() {
+      if (typeof p5 === "undefined") {
+        showError("p5.js failed to load. Please refresh the page.");
+        return false;
+      }
+      if (typeof planck === "undefined") {
+        showError("Planck.js (physics) failed to load. Please refresh the page.");
+        return false;
+      }
+      if (typeof Group === "undefined") {
+        showError("p5play library failed to load. Please refresh the page.");
+        return false;
+      }
+      console.log("✅ All libraries loaded successfully!");
+      return true;
+    }
+
+    // Wait for everything to load
+    window.addEventListener("load", () => {
+      if (!checkLibraries()) return;
+
+      // 🔥 Start your p5 sketch
+      new p5((sketch) => {
+        let ball;
+
+        sketch.setup = function () {
+          sketch.createCanvas(window.innerWidth, window.innerHeight);
+          ball = new Sprite(sketch.width / 2, sketch.height / 2, 50);
+          ball.color = "lime";
+          ball.vel.x = 3;
+          ball.vel.y = 2;
+        };
+
+        sketch.draw = function () {
+          sketch.background(0);
+          if (ball.x < 0 || ball.x > sketch.width) ball.vel.x *= -1;
+          if (ball.y < 0 || ball.y > sketch.height) ball.vel.y *= -1;
+          sketch.textAlign(sketch.CENTER);
+          sketch.textSize(20);
+          sketch.text("p5play running smoothly ⚡", sketch.width / 2, 40);
+        };
+      });
+    });
+  </script>
 </body>
 </html>
