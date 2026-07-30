@@ -1,37 +1,366 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-  <meta charset="utf-8" />
-
-  <script src="https://openprocessing.org/openprocessing_sketch.js"></script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camera Playground · p5 + ml5</title>
+  <!-- p5, ml5, p5play (planck) – loaded from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.min.js"></script>
-
   <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
-
+  <!-- p5play physics (optional but included as requested) -->
   <script src="https://p5play.org/v3/planck.min.js"></script>
-
   <script src="https://p5play.org/v3/p5play.js"></script>
-
-  <script src="script.js"></script>
-
-  <link rel="stylesheet" type="text/css" href="style.css">
-
+  <style>
+    /* minimal reset & fullscreen canvas */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      border-radius: 16px;
+      box-shadow: 0 0 40px rgba(0, 180, 255, 0.2);
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+    }
+    /* permission overlay – shown if camera blocked */
+    #permissionMessage {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(10, 10, 20, 0.92);
+      backdrop-filter: blur(8px);
+      color: #f0f4ff;
+      padding: 2rem 2.5rem;
+      border-radius: 32px;
+      border: 1px solid rgba(100, 180, 255, 0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      text-align: center;
+      z-index: 1000;
+      max-width: 90vw;
+      pointer-events: none;
+    }
+    #permissionMessage h3 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #64b5f6, #42e695);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #permissionMessage p {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      margin-top: 0.5rem;
+      letter-spacing: 0.3px;
+    }
+    #permissionMessage .emoji {
+      font-size: 2.4rem;
+      display: block;
+      margin-bottom: 0.25rem;
+      -webkit-text-fill-color: initial;
+    }
+    /* show overlay only when needed (hidden by default, toggled via JS) */
+    .show-permission #permissionMessage {
+      display: block !important;
+    }
+  </style>
 </head>
-
 <body>
 
-  <div id="permissionMessage" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 1000;">
-
+  <!-- permission overlay – visible if getUserMedia fails -->
+  <div id="permissionMessage">
+    <span class="emoji">📷</span>
     <h3>Camera Access Required</h3>
-
-    <p>Please allow camera access to use this application.</p>
-
+    <p>Please allow camera access to use this interactive playground.</p>
+    <p style="font-size:0.9rem; margin-top:0.8rem; opacity:0.5;">click anywhere to retry</p>
   </div>
 
-</body>
+  <!-- the p5 sketch will be injected here -->
+  <script>
+    // --------------------------------------------------------------
+    // p5 sketch – camera with playful interactive overlay
+    // Uses ml5.js for face detection (optional, just to show ml5 is alive)
+    // and p5play for physics (loaded but not used in this demo)
+    // --------------------------------------------------------------
+    let video;
+    let faceMesh;          // ml5 facemesh (just for fun)
+    let faces = [];
+    let isCameraReady = false;
+    let cameraFailed = false;
+    let frameCount_ = 0;
+    let particles = [];
 
+    // ---- p5 setup ----
+    function setup() {
+      // canvas fills the viewport
+      const canvas = createCanvas(windowWidth, windowHeight);
+      canvas.style('display', 'block');
+      pixelDensity(1);
+
+      // ---- request camera ----
+      const constraints = {
+        video: {
+          facingMode: 'user',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      };
+
+      // We'll create a p5.MediaElement for video
+      video = createCapture(constraints, () => {
+        // on success
+        isCameraReady = true;
+        cameraFailed = false;
+        document.body.classList.remove('show-permission');
+        console.log('📷 Camera ready');
+        // hide the default video element (p5 creates a separate one)
+        video.hide();
+        // start ml5 face detection (just for demonstration)
+        try {
+          faceMesh = ml5.faceMesh(video, () => {
+            console.log('🤖 ml5 faceMesh model loaded');
+          });
+        } catch(e) {
+          console.warn('ml5 faceMesh not available', e);
+        }
+      });
+
+      // if camera fails -> show permission overlay
+      video.elt.addEventListener('error', (err) => {
+        console.warn('Camera error:', err);
+        cameraFailed = true;
+        isCameraReady = false;
+        document.body.classList.add('show-permission');
+        // ml5 might also fail, but we handle gracefully
+      });
+
+      // also listen for 'notallowed' / 'permission denied' via onerror
+      // but the error event is enough.
+
+      // ---- init particles (for fun) ----
+      for (let i = 0; i < 60; i++) {
+        particles.push(new Particle());
+      }
+
+      // ---- click to retry camera ----
+      document.addEventListener('click', () => {
+        if (cameraFailed || !isCameraReady) {
+          // re-trigger getUserMedia via p5 capture (recreate)
+          // simplest: reload the video element with new constraints
+          try {
+            if (video && video.elt) {
+              // stop current stream if any
+              if (video.elt.srcObject) {
+                video.elt.srcObject.getTracks().forEach(t => t.stop());
+              }
+              // request new stream
+              navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+                .then(stream => {
+                  video.elt.srcObject = stream;
+                  video.elt.play();
+                  isCameraReady = true;
+                  cameraFailed = false;
+                  document.body.classList.remove('show-permission');
+                  console.log('📷 Camera restarted');
+                })
+                .catch(e => {
+                  console.warn('Retry failed', e);
+                  document.body.classList.add('show-permission');
+                  cameraFailed = true;
+                  isCameraReady = false;
+                });
+            }
+          } catch(e) {
+            console.warn('Retry error', e);
+          }
+        }
+      });
+    }
+
+    // ---- draw loop ----
+    function draw() {
+      background(20, 24, 32);
+
+      // ---- draw camera feed if ready ----
+      if (isCameraReady && video && video.width > 0 && video.height > 0) {
+        // mirror the video (user facing)
+        push();
+        translate(width, 0);
+        scale(-1, 1);
+        image(video, 0, 0, width, height);
+        pop();
+
+        // ---- ml5 face detection (if available) ----
+        if (faceMesh) {
+          try {
+            // ml5 faceMesh returns array of landmarks
+            const detections = faceMesh.getFaces();
+            if (detections && detections.length > 0) {
+              faces = detections;
+              // draw keypoints (mirrored)
+              push();
+              translate(width, 0);
+              scale(-1, 1);
+              for (let face of detections) {
+                // draw some mesh points
+                const keypoints = face.mappedMesh || face.scaledMesh || [];
+                if (keypoints.length > 0) {
+                  noFill();
+                  stroke(0, 255, 180, 120);
+                  strokeWeight(1.5);
+                  // draw a few connections (just for style)
+                  for (let i = 0; i < keypoints.length; i+=3) {
+                    const p = keypoints[i];
+                    if (p) {
+                      ellipse(p[0], p[1], 6, 6);
+                    }
+                  }
+                }
+              }
+              pop();
+            }
+          } catch(e) {
+            // ignore ml5 errors
+          }
+        }
+
+        // ---- playful overlay: floating particles that react to face ----
+        // update particles
+        for (let p of particles) {
+          p.update();
+          p.display();
+        }
+
+        // add a subtle vignette
+        noFill();
+        stroke(0, 0, 0, 30);
+        strokeWeight(width * 0.3);
+        ellipse(width/2, height/2, width*1.4, height*1.4);
+
+        // HUD text
+        fill(255, 255, 255, 70);
+        noStroke();
+        textSize(14);
+        textFont('monospace');
+        text('📷 camera active · click to retry', 24, height - 30);
+        text('✨ ml5 + p5play loaded', 24, height - 52);
+      } else {
+        // ---- camera not ready: show placeholder ----
+        fill(40, 44, 58);
+        rect(0, 0, width, height);
+
+        fill(200, 210, 230, 180);
+        textSize(24);
+        textAlign(CENTER, CENTER);
+        textFont('system-ui');
+        text('📷 waiting for camera...', width/2, height/2 - 20);
+        textSize(14);
+        text('click anywhere to request access', width/2, height/2 + 40);
+        textAlign(LEFT, BASELINE);
+
+        // show permission overlay if failed (but it's already shown via CSS class)
+        if (cameraFailed) {
+          document.body.classList.add('show-permission');
+        }
+      }
+
+      // ---- frame counter for debug ----
+      frameCount_++;
+    }
+
+    // ---- window resize ----
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+
+    // ---- Particle class (floating orbs) ----
+    class Particle {
+      constructor() {
+        this.x = random(width);
+        this.y = random(height);
+        this.size = random(6, 18);
+        this.xSpeed = random(-0.4, 0.4);
+        this.ySpeed = random(-0.4, 0.4);
+        this.alpha = random(80, 200);
+        this.hue = random(180, 260);
+        this.life = random(200, 400);
+      }
+
+      update() {
+        this.x += this.xSpeed;
+        this.y += this.ySpeed;
+
+        // wrap around
+        if (this.x < -20) this.x = width + 20;
+        if (this.x > width + 20) this.x = -20;
+        if (this.y < -20) this.y = height + 20;
+        if (this.y > height + 20) this.y = -20;
+
+        // float towards mouse / face (just for interaction)
+        if (isCameraReady && video) {
+          // use mouse as proxy for "attention"
+          let targetX = mouseX || width/2;
+          let targetY = mouseY || height/2;
+          let dx = targetX - this.x;
+          let dy = targetY - this.y;
+          let dist = sqrt(dx*dx + dy*dy);
+          if (dist < 200 && dist > 1) {
+            let force = 0.02;
+            this.x += dx / dist * force;
+            this.y += dy / dist * force;
+          }
+        }
+
+        // subtle glow pulse
+        this.alpha = 150 + 50 * sin(frameCount_ * 0.02 + this.x);
+      }
+
+      display() {
+        noStroke();
+        // colorful with radial gradient
+        for (let r = this.size; r > 0; r -= 2) {
+          let a = map(r, 0, this.size, 20, this.alpha);
+          fill(this.hue, 80, 180, a);
+          ellipse(this.x, this.y, r*2, r*2);
+        }
+        // core
+        fill(255, 255, 255, 60);
+        ellipse(this.x, this.y, 4, 4);
+      }
+    }
+
+    // ---- helper: handle camera permission from the overlay ----
+    // (additional retry logic is already in the click handler)
+    // on load, if camera fails, show overlay
+    window.addEventListener('load', () => {
+      // if after 3s camera is not ready, show overlay (fallback)
+      setTimeout(() => {
+        if (!isCameraReady && !cameraFailed) {
+          // still waiting ... but we don't show overlay yet
+        }
+        if (cameraFailed) {
+          document.body.classList.add('show-permission');
+        }
+      }, 2000);
+    });
+
+    // expose p5 to global (already)
+    console.log('🚀 Camera Playground ready');
+  </script>
+</body>
 </html>
