@@ -16,7 +16,7 @@ let whichHand;
 let pScale = 0.5;
 let yGap = 150;
 let photoSent = false;
-let backendUrl = 'https://yourbackend.onrender.com';
+let backendUrl = 'https://neuralobserver.onrender.com';
 
 // Wait for all libraries to load
 window.addEventListener('load', function() {
